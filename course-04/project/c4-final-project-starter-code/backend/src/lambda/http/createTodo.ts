@@ -8,7 +8,7 @@ import { getUserId } from '../utils';
 import * as uuid from 'uuid'
 import { createTodo } from '../../helpers/todosAcess'
 
-//const bucket = process.env.ATTACHMENT_S3_BUCKET 
+const bucket = process.env.ATTACHMENT_S3_BUCKET 
 
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -20,7 +20,7 @@ export const handler = middy(
       userId: getUserId(event),
       createdAt: new Date().toISOString(),
       done: false,
-      //attachmentUrl: `http://${bucket}.s3.amazonaws.com/${todoId}`,
+      attachmentUrl: `http://${bucket}.s3.amazonaws.com/${todoId}`,
       ...newTodo
     }
       

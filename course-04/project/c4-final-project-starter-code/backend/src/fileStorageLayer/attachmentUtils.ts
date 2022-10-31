@@ -8,13 +8,13 @@ const s3 = new XAWS.S3({
     signatureVersion: 'v4'
   })
 
-  const mybucket = process.env.ATTACHMENT_S3_BUCKET
-  const urlExpiration = 3000
+const mybucket = process.env.ATTACHMENT_S3_BUCKET
+const urlExpiration = 300
 
-export function getUploadUrl(todoId: string) {
-    return s3.getSignedUrl('putObject', {
-      Bucket: mybucket,
-      Key: todoId,
-      Expires: urlExpiration
-    })
-  }
+export function getUploadUrl(todoId: string){
+  return s3.getSignedUrl('putObject', {
+    Bucket: mybucket,
+    Key: todoId,
+    Expires: urlExpiration
+  })
+}

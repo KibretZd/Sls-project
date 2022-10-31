@@ -1,11 +1,12 @@
-// import { TodosAccess } from './todosAcess'
-// import { AttachmentUtils } from './attachmentUtils';
+import { TodosAccess } from '../dataLayer/todosAcess'
 import { TodoItem } from '../models/TodoItem'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
-// import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
+import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 // import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
-import { TodosAccess } from '../dataLayer/todosAcess'
+import { getUploadUrl } from '../fileStorageLayer/attachmentUtils'
+
+
 // import * as createError from 'http-errors'
 
 const todosAcess = new TodosAccess()
@@ -28,6 +29,18 @@ export async function createTodo(
     })
 }
 
-export async function getAllTodosForUser(userId:string) {
+export async function getTodosForUser(userId: string) {
     return todosAcess.getTodosForUser(userId)    
+}
+
+export async function deleteTodo(userId: string, todoId: string){
+    return todosAcess.deleteTodo(userId, todoId)
+}
+
+export async function updateTodo(updateTodoRequest:UpdateTodoRequest, todoId: string, userId: string) {
+    return todosAcess.updateTodo(updateTodoRequest, todoId, userId)   
+}
+
+export async function createAttachmentPresignedUrl(todoId:string) {
+    return getUploadUrl(todoId)    
 }

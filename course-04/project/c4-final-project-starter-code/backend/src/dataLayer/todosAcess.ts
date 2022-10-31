@@ -1,87 +1,51 @@
 import * as AWS from 'aws-sdk'
 import * as AWSXRay from 'aws-xray-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
-// import { createLogger } from '../utils/logger'
+import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
-// import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 import { TodoUpdate } from '../models/TodoUpdate'
-// import { TodoUpdate } from '../models/TodoUpdate';
+
 
 const XAWS = AWSXRay.captureAWS(AWS)
-// const logger = createLogger('TodosAccess')
+const logger = createLogger('TodosAccess')
 
 // TODO: Implement the dataLayer logic
 export class TodosAccess{
     constructor (
         private readonly docClient:DocumentClient = createDynamoDBClient(),
         private readonly todosTable = process.env.TODOS_TABLE,
-        private readonly indexTable = process.env.TODOS_CREATED_AT_INDEX)
-        {
+        private readonly indexTable = process.env.TODOS_CREATED_AT_INDEX) {
 
-        }
+    }
     
     async getTodosForUser(userId: string): Promise<TodoItem []>{
-        const resultSet = await this.docClient
-        .query({
+
+        // console.log("Getting all todo items for user")
+        logger.info("Reading all todos for the user")
+        const getTodoForUserQuery = {
             TableName: this.todosTable,
             //IndexName: this.indexTable,
             KeyConditionExpression: 'userId = :userId',
             ExpressionAttributeValues: {
                 ':userId': userId
             }
-        }).promise()
+        }
+
+        const resultSet = await this.docClient.query(getTodoForUserQuery).promise()
     
         if(resultSet.Count !== 0 ){
             return resultSet.Items as TodoItem[]
         }
-        
-    
+            
         return null
     }
     
-    async deleteTodo(userId: string): Promise<TodoItem []>{
-        const result = await this.docClient
-        .query({
-            TableName: this.todosTable,
-            IndexName: this.indexTable,
-            KeyConditionExpression: 'userId = :userId',
-            ExpressionAttributeValues: {
-                ':userId': userId
-            }
-        }).promise()
     
-        if(result.Count !== 0 ){
-            return result.Items as TodoItem[]
-        }
-    
-        return null
-    }
-    
-    async updateTodoAttachmentUrl(todoItem:TodoItem){
-        await this.docClient
-        .update({
-            TableName: this.todosTable,
-            Key:{
-                todoId: todoItem.todoId,
-                userId: todoItem.userId
-            },
-            UpdateExpression: 'set attachmentUrl = :attachmentUrl',
-            ExpressionAttributeValues: {
-                ':attachmentUrl': todoItem.attachmentUrl
-            }
-        })
-        .promise()
-    
-        // if(result.Count !== 0 ){
-        //     return result.Items as TodoItem[]
-        // }
-    
-        // return null
-    }
-    
-    async updateToDo(todoUpdate: TodoUpdate, todoId: string, userId: string) {
-        await this.docClient
-        .update({
+    async updateTodo(todoUpdate: TodoUpdate, todoId: string, userId: string) {
+
+        console.log("Updating a todo Item")
+
+        const updateTodoQuery = {
             TableName: this.todosTable,
             Key: {
                 "userId": userId,
@@ -94,59 +58,76 @@ export class TodosAccess{
                 "done" : todoUpdate["done"]
             },
             // ReturnValues: "ALL_NEW"
-        })
-        .promise()
+        }
+        
+        logger.info("Todo Item has been updated")
+        await this.docClient.update(updateTodoQuery).promise()
     }
     
     
     async createTodo(todoItem: TodoItem) :Promise<TodoItem>{
-        await this.docClient
-        .put({
+
+        console.log("Creating a todo Item")
+
+        const createTodoQuery = {
             TableName: this.todosTable,
             Item: todoItem
-        })
-        .promise()
+        }
+
+        await this.docClient.put(createTodoQuery).promise()
     
+        logger.info("Todo item hs been created")
         return todoItem
     }
     
     
-    async getTodoById(todoId:string) :Promise<TodoItem>{    
-    
-        const resultSet = await this.docClient
-        .query({
+    async getTodoById(todoId:string) :Promise<TodoItem>{ 
+
+        console.log("Getting a todo Item by todoId")
+
+        const getTodoIdQuery = {
             TableName: this.todosTable,
             IndexName: this.indexTable,
             KeyConditionExpression: 'todoId = :todoId',
             ExpressionAttributeValues:{
                 ':todoId':todoId
             }
-        })
-        .promise()
+        }
+    
+        const resultSet = await this.docClient.query(getTodoIdQuery).promise()
+
         if (resultSet.Count !== 0)
             return resultSet.Items[0] as TodoItem
         return null
     }
     
-    async deleteToDo(userId: string, todoId: string) {
-        await this.docClient.delete({
+    async deleteTodo(userId: string, todoId: string) {
+
+        console.log("Delete a Todo Item")
+
+        const deleteTodoQuery = {
             TableName: this.todosTable,
             Key: {
                 "userId": userId,
                 "todoId": todoId
             },
-        }).promise()
+        }
+        await this.docClient.delete(deleteTodoQuery).promise()
+        logger.info("Todo item with id of " + todoId + " has been deleted")
     }
 }
 
 function createDynamoDBClient() {
+
     if (process.env.IS_OFFLINE) {
+
       console.log('Creating a local DynamoDB instance')
+
       return new XAWS.DynamoDB.DocumentClient({
         region: 'localhost',
         endpoint: 'http://localhost:8000'
       })
     }
-  
+    // logger.info('Creating DynamoDB instance is created')
     return new XAWS.DynamoDB.DocumentClient()
-  }
+}
