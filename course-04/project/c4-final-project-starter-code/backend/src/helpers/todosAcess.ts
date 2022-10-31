@@ -3,6 +3,8 @@ import * as AWSXRay from 'aws-xray-sdk'
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 // import { createLogger } from '../utils/logger'
 import { TodoItem } from '../models/TodoItem'
+// import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
+import { TodoUpdate } from '../models/TodoUpdate'
 // import { TodoUpdate } from '../models/TodoUpdate';
 
 const XAWS = AWSXRay.captureAWS(AWS)
@@ -51,7 +53,7 @@ export async function deleteTodo(userId: string): Promise<TodoItem []>{
     return null
 }
 
-export async function updateTodo(todoItem:TodoItem){
+export async function updateTodoAttachmentUrl(todoItem:TodoItem){
     await docClient
     .update({
         TableName: todosTable,
@@ -64,13 +66,32 @@ export async function updateTodo(todoItem:TodoItem){
             ':attachmentUrl': todoItem.attachmentUrl
         }
     })
-    //.promise()
+    .promise()
 
     // if(result.Count !== 0 ){
     //     return result.Items as TodoItem[]
     // }
 
     // return null
+}
+
+export async function updateToDo(todoUpdate: TodoUpdate, todoId: string, userId: string) {
+    await docClient
+    .update({
+        TableName: todosTable,
+        Key: {
+            "userId": userId,
+            "todoId": todoId
+        },
+        UpdateExpression: "set name = :name, dueDate = :dueDate, done = :done",
+        ExpressionAttributeValues:{
+            "name": todoUpdate["name"],
+            "dueDate" : todoUpdate["dueDate"],
+            "done" : todoUpdate["done"]
+        },
+        // ReturnValues: "ALL_NEW"
+    })
+    .promise()
 }
 
 
@@ -113,3 +134,13 @@ function createDynamoDBClient() {
         return resultSet.Items[0] as TodoItem
     return null
   }
+
+  export async function deleteToDo(userId: string, todoId: string) {
+    await docClient.delete({
+        TableName: todosTable,
+        Key: {
+            "userId": userId,
+            "todoId": todoId
+        },
+    }).promise()
+}
